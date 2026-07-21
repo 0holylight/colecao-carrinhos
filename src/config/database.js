@@ -17,6 +17,6 @@ const sequelize = new Sequelize(
 
 export default sequelize;
 
-sequelize.authenticate()
-  .then(() => console.log('Conexão com o banco estabelecida com sucesso!'))
-  .catch((erro) => console.error('Não foi possível conectar ao banco:', erro));
+// sequelize.authenticate()
+//   .then(() => console.log('Conexão com o banco estabelecida com sucesso!'))
+//   .catch((erro) => console.error('Não foi possível conectar ao banco:', erro));

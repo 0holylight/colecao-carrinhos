@@ -42,3 +42,7 @@ export async function registerUser(req, res) {
       .json({ message: 'Um erro interno ocorreu, tente novamente.' });
   }
 }
+
+// Ver perfil
+
+// Editar perfil

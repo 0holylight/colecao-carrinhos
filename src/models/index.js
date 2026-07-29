@@ -4,13 +4,16 @@
 
 import sequelize from '../config/database.js';
 
-import User from './User.js'
-import Car from './Car.js'
+import User from './User.js';
+import Car from './Car.js';
 
 // Usuário 1 : n Carros
 User.hasMany(Car, { onDelete: 'CASCADE' });
 // Carros n : 1 Usuário
-Car.belongsTo(User, { onDelete: 'CASCADE' });
+Car.belongsTo(User, {
+  foreignKey: { allowNull: false },
+  onDelete: 'CASCADE',
+});
 
 /* O que foi feito no PostgreS? 
 
@@ -28,8 +31,7 @@ CREATE TABLE IF NOT EXISTS "Car" (
 const db = {
   User,
   Car,
-  sequelize
-}
+  sequelize,
+};
 
 export default db;
-

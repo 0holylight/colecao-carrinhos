@@ -11,7 +11,7 @@ import { registerUser } from '../controllers/userController.js';
 
 const router = express.Router();
 
-// Aqui eu digo que ao receber um post no endereço '/', 
+// Aqui eu digo que ao receber um post no endereço '/',
 // que a função registerUser seja executada para tratar o que for "POSTado"
 router.post('/', registerUser); // Isso vai gerar resultado lá no app.js
 

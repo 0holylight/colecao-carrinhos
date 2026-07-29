@@ -17,9 +17,14 @@ export async function registerUser(req, res) {
   const { name, username, password } = req.body;
 
   try {
-    if (!name) return res.status(400).json({ message: 'Você precisa inserir o seu nome.' });
-    if (!username) return res.status(400).json({ message: 'Username não preenchido.' });
-    if (!password) return res.status(400).json({ message: 'Senha não foi enviada.' });
+    if (!name)
+      return res
+        .status(400)
+        .json({ message: 'Você precisa inserir o seu nome.' });
+    if (!username)
+      return res.status(400).json({ message: 'Username não preenchido.' });
+    if (!password)
+      return res.status(400).json({ message: 'Senha não foi enviada.' });
 
     const match = await db.User.findOne({ where: { username: username } });
     if (match === null) {

@@ -24,10 +24,18 @@ Car.init(
     year: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      set(value) {
+        this.setDataValue('year', Number(value));
+      },
       validate: {
         min: 1968,
         max: new Date().getFullYear()
       } 
+    },
+
+    photoUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
     }
 
   },

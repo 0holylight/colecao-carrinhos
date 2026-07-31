@@ -3,6 +3,7 @@ import cors from 'cors';
 
 import userRoutes from './routes/userRoutes.js';
 import tokenRoutes from './routes/tokenRoutes.js';
+import carRoutes from './routes/carRoutes.js';
 
 const app = express();
 
@@ -13,5 +14,6 @@ app.use(cors());
 // ROUTES
 app.use('/usuarios', userRoutes);
 app.use('/tokens', tokenRoutes);
+app.use('/carros', carRoutes);
 
 export default app;

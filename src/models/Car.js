@@ -5,7 +5,6 @@ class Car extends Model {}
 
 Car.init(
   {
-
     name: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -13,14 +12,14 @@ Car.init(
 
     collection: {
       type: DataTypes.STRING,
-      allowNull: true,   
+      allowNull: true,
     },
 
     color: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    
+
     year: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -29,15 +28,14 @@ Car.init(
       },
       validate: {
         min: 1968,
-        max: new Date().getFullYear()
-      } 
+        max: new Date().getFullYear(),
+      },
     },
 
     photoUrl: {
       type: DataTypes.STRING,
       allowNull: true,
-    }
-
+    },
   },
   {
     sequelize,

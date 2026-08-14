@@ -8,6 +8,8 @@ export async function createCar(req, res) {
   const photo = req.file?.filename;
 
   try {
+    if (!userId)
+      return res.status(401).json({ message: 'Usuário não autenticado.' });
     if (!name)
       return res
         .status(400)
@@ -46,7 +48,7 @@ export async function createCar(req, res) {
 export async function getCar(req, res) {
   const userId = req.userId;
   if (!userId)
-    return res.status(401).json({ message: 'Usuário não autenticado. ' });
+    return res.status(401).json({ message: 'Usuário não autenticado.' });
 
   try {
     const carList = await db.Car.findAll({ where: { UserId: userId } });
@@ -96,7 +98,6 @@ export async function updateCar(req, res) {
       car.set({ name, year, color, collection });
     }
     const camposAlterados = car.changed();
-    console.log('Campos que o Sequelize considera alterados:', camposAlterados);
 
     if (!camposAlterados || camposAlterados.length === 0) {
       return res.status(200).json({ message: 'Nenhuma alteração detectada.' });
@@ -136,6 +137,6 @@ export async function deleteCar(req, res) {
     console.log(e);
     return res
       .status(500)
-      .json({ message: 'Um erro ocorreu ao tentar alterar.' });
+      .json({ message: 'Um erro ocorreu ao tentar deletar.' });
   }
 }

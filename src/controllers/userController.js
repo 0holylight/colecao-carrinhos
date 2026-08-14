@@ -23,10 +23,10 @@ export async function registerUser(req, res) {
         password: hashPassword,
       });
       console.log(`Usuário: ${username} criado com sucesso!`);
-      res.status(201).json({ message: 'Usuário criado com sucesso' }); // *
+      res.status(201).json({ message: 'Usuário criado com sucesso' }); 
     } else {
       console.log('O usuário já foi tomado.');
-      res.status(409).json({ message: 'Esse username já está em uso' }); // *
+      res.status(409).json({ message: 'Esse username já está em uso' }); 
     }
   } catch (e) {
     console.log(e);
@@ -87,7 +87,6 @@ export async function updateUser(req, res) {
 
     user.set({ name });
     const camposAlterados = user.changed();
-    console.log('Campos que o Sequelize considera alterados:', camposAlterados);
 
     if (!camposAlterados || camposAlterados.length === 0) {
       return res.status(200).json({ message: 'Nenhuma alteração detectada.' });

@@ -5,7 +5,7 @@ import db from '../models/index.js';
 export async function createCar(req, res) {
   const userId = req.userId;
   const { name, collection, color, year } = req.body;
-  const photo = req.file?.filename 
+  const photo = req.file?.filename;
 
   try {
     if (!name)
@@ -64,7 +64,7 @@ export async function getCar(req, res) {
 export async function updateCar(req, res) {
   const userId = req.userId;
   const { id } = req.params;
-  const photo = req.file?.filename 
+  const photo = req.file?.filename;
   const { name, year, color, collection } = req.body;
 
   try {
@@ -122,7 +122,7 @@ export async function deleteCar(req, res) {
 
   try {
     const car = await db.Car.findByPk(id);
-  
+
     if (!userId)
       return res.status(401).json({ message: 'Usuário não autenticado.' });
     if (!car)
@@ -130,9 +130,8 @@ export async function deleteCar(req, res) {
     if (userId !== car.UserId)
       return res.status(404).json({ message: 'Carrinho não encontrado.' });
 
-    await car.destroy()
-    return res.status(204).send()
-
+    await car.destroy();
+    return res.status(204).send();
   } catch (e) {
     console.log(e);
     return res

@@ -1,7 +1,3 @@
-// De acordo com a leitura feita na documentação do Sequelize,
-// dentre as diversas formas de se estabelecer relacionamentos,
-// o A.hasMany(B) é o mais adequado para o projeto.
-
 import sequelize from '../config/database.js';
 
 import User from './User.js';
@@ -14,19 +10,6 @@ Car.belongsTo(User, {
   foreignKey: { allowNull: false },
   onDelete: 'CASCADE',
 });
-
-/* O que foi feito no PostgreS? 
-
-CREATE TABLE IF NOT EXISTS "User" (
-   ... 
-);
-CREATE TABLE IF NOT EXISTS "Car" (
-   ... 
-  "UserId" INTEGER REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-   ... 
-); 
-
-*/
 
 const db = {
   User,

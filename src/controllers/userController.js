@@ -1,15 +1,3 @@
-/*
-Função async (req, res) => {...}
-Destruturar name, username, password de req.body
-Gerar hash da senha com bcrypt (método assíncrono, precisa de await) — você lembra o nome dele, ou quer que eu confirme?
-db.User.create({...}) — passando o hash, nunca a senha original
-res.status(...).json(...) — decide o status certo pra "criado com sucesso", e se vai devolver a senha (mesmo em hash) na resposta ou não
-Tudo dentro de try/catch, pensando no caso de username duplicado
-
-Pelo que eu entendi, aqui eu vou capturar o registro do usuario,
-então eu preciso pegar um post.
-*/
-
 import db from '../models/index.js';
 import bcrypt from 'bcrypt';
 
@@ -49,5 +37,70 @@ export async function registerUser(req, res) {
 }
 
 // Ver perfil
+export async function viewUser(req, res) {
+  const { id } = req.params;
+  const userId = req.userId;
+
+  try {
+    const user = await db.User.findByPk(id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+    if (userId !== user.id) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    const totalCarros = await db.Car.count({ where: { UserId: user.id } });
+
+    return res
+      .status(200)
+      .json({ name: user.name, username: user.username, totalCarros });
+  } catch (e) {
+    console.log(e);
+    res
+      .status(500)
+      .json({ message: 'Um erro interno ocorreu, tente novamente.' });
+  }
+}
 
 // Editar perfil
+export async function updateUser(req, res) {
+  const { id } = req.params;
+  const userId = req.userId;
+  const { name } = req.body;
+
+  try {
+    const user = await db.User.findByPk(id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+    if (userId !== user.id) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+    if (!name) {
+      return res
+        .status(400)
+        .json({ message: 'O campo Nome não pode ficar vazio.' });
+    }
+
+    user.set({ name });
+    const camposAlterados = user.changed();
+    console.log('Campos que o Sequelize considera alterados:', camposAlterados);
+
+    if (!camposAlterados || camposAlterados.length === 0) {
+      return res.status(200).json({ message: 'Nenhuma alteração detectada.' });
+    }
+
+    await user.save();
+    return res
+      .status(200)
+      .json({ message: 'Alteração realizada com sucesso!' });
+  } catch (e) {
+    console.log(e);
+    res
+      .status(500)
+      .json({ message: 'Um erro interno ocorreu, tente novamente.' });
+  }
+}

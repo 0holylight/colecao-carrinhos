@@ -23,6 +23,14 @@ export async function createCar(req, res) {
         .status(400)
         .json({ message: 'Você precisa inserir o ano do seu carrinho.' });
 
+    var totalCar = await db.Car.count({ where: { UserId: userId }})
+
+    if ( totalCar >= 25 ) {
+      return res
+        .status(400)
+        .json({ message: 'Não há mais espaço na sua coleção.' })
+    }
+
     await db.Car.create({
       name,
       collection,

@@ -19,12 +19,14 @@ export async function loginUser(req, res) {
         return res.status(401).json({ message: 'Credenciais inválidas' });
       } else {
         const token = jwt.sign({ id: match.id }, process.env.JWT_SECRET, {
-          expiresIn: '7d',
+          expiresIn: '30m',
         });
 
         res.cookie('token', token, {
           httpOnly: true,
           maxAge: 1800000,
+          sameSite: 'strict', // Pode mudar no deploy
+          secure: process.env.NODE_ENV === 'production',
         });
 
         return res

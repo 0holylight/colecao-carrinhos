@@ -5,6 +5,7 @@ export async function registerUser(req, res) {
   const { name, username, password } = req.body;
 
   try {
+    // Validação de NULL
     if (!name)
       return res
         .status(400)
@@ -13,6 +14,20 @@ export async function registerUser(req, res) {
       return res.status(400).json({ message: 'Username não preenchido.' });
     if (!password)
       return res.status(400).json({ message: 'Senha não foi enviada.' });
+
+    // Validação de limites
+    if (name.length < 4 || name.length > 100)
+      return res
+        .status(400)
+        .json({ message: 'Nome precisa conter de 4 a 100 caracteres.' });
+    if (username.length < 4 || username.length > 15)
+      return res
+        .status(400)
+        .json({ message: 'Usuário precisa conter de 4 a 15 caracteres.' });
+    if (password.length < 8 || password.length > 64)
+      return res
+        .status(400)
+        .json({ message: 'Senha precisa conter de 8 a 20 caracteres.' });
 
     const match = await db.User.findOne({ where: { username: username } });
     if (match === null) {
@@ -23,10 +38,10 @@ export async function registerUser(req, res) {
         password: hashPassword,
       });
       console.log(`Usuário: ${username} criado com sucesso!`);
-      res.status(201).json({ message: 'Usuário criado com sucesso' }); 
+      res.status(201).json({ message: 'Usuário criado com sucesso' });
     } else {
       console.log('O usuário já foi tomado.');
-      res.status(409).json({ message: 'Esse username já está em uso' }); 
+      res.status(409).json({ message: 'Esse username já está em uso' });
     }
   } catch (e) {
     console.log(e);

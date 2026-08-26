@@ -17,6 +17,19 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const limits = { fileSize: 1024 * 1024 * 8 };
+
+const upload = multer({
+  storage: storage,
+  limits: limits,
+  fileFilter(req, file, cb) {
+    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/gif'];
+    if (tiposPermitidos.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Apenas imagens são permitidas.'));
+    }
+  },
+});
 
 export default upload;

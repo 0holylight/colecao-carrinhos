@@ -6,6 +6,8 @@ import userRoutes from './routes/userRoutes.js';
 import tokenRoutes from './routes/tokenRoutes.js';
 import carRoutes from './routes/carRoutes.js';
 
+import errorHandler from './middlewares/errorHandler.js'
+
 const app = express();
 
 // MIDDLEWARES
@@ -22,5 +24,8 @@ app.use(cookieParser());
 app.use('/usuarios', userRoutes);
 app.use('/tokens', tokenRoutes);
 app.use('/carros', carRoutes);
+
+// ERROR-HANDLER
+app.use(errorHandler)
 
 export default app;

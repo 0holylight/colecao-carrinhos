@@ -1,7 +1,8 @@
-import db from '../models/index.js';
-import { UPLOADS_DIR } from '../config/uploads.js';
-import fs from 'fs/promises';
-import path from 'path';
+import db from "../models/index.js";
+import { UPLOADS_DIR } from "../config/uploads.js";
+import fs from "fs/promises";
+import { unlink } from "fs/promises";
+import path from "path";
 
 // createCar
 
@@ -12,26 +13,26 @@ export async function createCar(req, res) {
 
   try {
     if (!userId)
-      return res.status(401).json({ message: 'Usuário não autenticado.' });
+      return res.status(401).json({ message: "Usuário não autenticado." });
     if (!name)
       return res
         .status(400)
-        .json({ message: 'Você precisa inserir o nome do seu carrinho.' });
+        .json({ message: "Você precisa inserir o nome do seu carrinho." });
     if (!color)
       return res
         .status(400)
-        .json({ message: 'Você precisa inserir a cor do seu carrinho.' });
+        .json({ message: "Você precisa inserir a cor do seu carrinho." });
     if (!year)
       return res
         .status(400)
-        .json({ message: 'Você precisa inserir o ano do seu carrinho.' });
+        .json({ message: "Você precisa inserir o ano do seu carrinho." });
 
     const totalCar = await db.Car.count({ where: { UserId: userId } });
 
     if (totalCar >= 25) {
       return res
         .status(400)
-        .json({ message: 'Não há mais espaço na sua coleção.' });
+        .json({ message: "Não há mais espaço na sua coleção." });
     }
 
     await db.Car.create({
@@ -45,12 +46,12 @@ export async function createCar(req, res) {
 
     return res
       .status(201)
-      .json({ message: 'Seu carrinho foi registrado na coleção!' });
+      .json({ message: "Seu carrinho foi registrado na coleção!" });
   } catch (e) {
     console.log(e);
     return res
       .status(500)
-      .json({ message: 'Algum erro ocorreu durante o registro.' });
+      .json({ message: "Algum erro ocorreu durante o registro." });
   }
 }
 
@@ -59,7 +60,7 @@ export async function createCar(req, res) {
 export async function getCar(req, res) {
   const userId = req.userId;
   if (!userId)
-    return res.status(401).json({ message: 'Usuário não autenticado.' });
+    return res.status(401).json({ message: "Usuário não autenticado." });
 
   try {
     const carList = await db.Car.findAll({ where: { UserId: userId } });
@@ -68,7 +69,7 @@ export async function getCar(req, res) {
     console.log(e);
     return res
       .status(500)
-      .json({ message: 'Um erro ocorreu ao buscar a coleção.' });
+      .json({ message: "Um erro ocorreu ao buscar a coleção." });
   }
 }
 
@@ -84,11 +85,11 @@ export async function updateCar(req, res) {
     const car = await db.Car.findByPk(id);
 
     if (!userId)
-      return res.status(401).json({ message: 'Usuário não autenticado.' });
+      return res.status(401).json({ message: "Usuário não autenticado." });
     if (!car)
-      return res.status(404).json({ message: 'Carrinho não encontrado.' });
+      return res.status(404).json({ message: "Carrinho não encontrado." });
     if (userId !== car.UserId)
-      return res.status(404).json({ message: 'Carrinho não encontrado.' });
+      return res.status(404).json({ message: "Carrinho não encontrado." });
 
     if (!name)
       return res
@@ -103,6 +104,8 @@ export async function updateCar(req, res) {
         .status(400)
         .json({ message: 'O campo "ano" não pode ficar vazio.' });
 
+    const existingPhoto = car.photoUrl;
+
     if (photo) {
       car.set({ name, year, color, collection, photoUrl: photo });
     } else {
@@ -111,18 +114,32 @@ export async function updateCar(req, res) {
     const camposAlterados = car.changed();
 
     if (!camposAlterados || camposAlterados.length === 0) {
-      return res.status(200).json({ message: 'Nenhuma alteração detectada.' });
+      return res.status(200).json({ message: "Nenhuma alteração detectada." });
     }
 
     await car.save();
+
+    // Remoção da foto APÓS o SAVE
+    if (photo && existingPhoto) {
+      try {
+        await fs.unlink(path.join(UPLOADS_DIR, existingPhoto));
+        console.log("A foto antiga foi removida permanentemente.");
+      } catch (e) {
+        console.log(
+          "Um erro ocorreu ao deletar o seguindo arquivo:",
+          existingPhoto,
+        );
+      }
+    }
+
     return res
       .status(200)
-      .json({ message: 'Alteração realizada com sucesso!' });
+      .json({ message: "Alteração realizada com sucesso!" });
   } catch (e) {
     console.log(e);
     return res
       .status(500)
-      .json({ message: 'Um erro ocorreu ao tentar alterar.' });
+      .json({ message: "Um erro ocorreu ao tentar alterar." });
   }
 }
 
@@ -136,19 +153,32 @@ export async function deleteCar(req, res) {
     const car = await db.Car.findByPk(id);
 
     if (!userId)
-      return res.status(401).json({ message: 'Usuário não autenticado.' });
+      return res.status(401).json({ message: "Usuário não autenticado." });
     if (!car)
-      return res.status(404).json({ message: 'Carrinho não encontrado.' });
+      return res.status(404).json({ message: "Carrinho não encontrado." });
     if (userId !== car.UserId)
-      return res.status(404).json({ message: 'Carrinho não encontrado.' });
+      return res.status(404).json({ message: "Carrinho não encontrado." });
+
+    const existingPhoto = car.photoUrl;
 
     await car.destroy();
+    if (existingPhoto) {
+      try {
+        await fs.unlink(path.join(UPLOADS_DIR, existingPhoto));
+      } catch (e) {
+        console.log(
+          "Um erro ocorreu ao deletar o seguindo arquivo:",
+          existingPhoto,
+        );
+      }
+    }
+
     return res.status(204).send();
   } catch (e) {
     console.log(e);
     return res
       .status(500)
-      .json({ message: 'Um erro ocorreu ao tentar deletar.' });
+      .json({ message: "Um erro ocorreu ao tentar deletar." });
   }
 }
 
@@ -160,27 +190,27 @@ export async function removeCarPhoto(req, res) {
     const car = await db.Car.findByPk(id);
 
     if (!userId)
-      return res.status(401).json({ message: 'Usuário não autenticado.' });
+      return res.status(401).json({ message: "Usuário não autenticado." });
     if (!car)
-      return res.status(404).json({ message: 'Carrinho não encontrado.' });
+      return res.status(404).json({ message: "Carrinho não encontrado." });
     if (userId !== car.UserId)
-      return res.status(404).json({ message: 'Carrinho não encontrado.' });
+      return res.status(404).json({ message: "Carrinho não encontrado." });
 
     if (car.photoUrl) {
       const caminho = path.join(UPLOADS_DIR, car.photoUrl);
 
       await fs.unlink(caminho);
-      
+
       car.photoUrl = null;
       await car.save();
 
-      return res.status(200).json({ message: 'Foto removida com sucesso.' });
+      return res.status(200).json({ message: "Foto removida com sucesso." });
     }
-    return res.status(400).json({ message: 'Não há foto para ser removida. ' });
+    return res.status(400).json({ message: "Não há foto para ser removida. " });
   } catch (e) {
     console.log(e);
     return res
       .status(500)
-      .json({ message: 'Erro ocorreu ao tentar remover a foto.' });
+      .json({ message: "Erro ocorreu ao tentar remover a foto." });
   }
 }

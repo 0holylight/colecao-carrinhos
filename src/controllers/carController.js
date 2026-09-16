@@ -35,7 +35,7 @@ export async function createCar(req, res) {
         .json({ message: "Não há mais espaço na sua coleção." });
     }
 
-    await db.Car.create({
+    const createdCar = await db.Car.create({
       name,
       collection,
       color,
@@ -44,9 +44,10 @@ export async function createCar(req, res) {
       photoUrl: photo,
     });
 
-    return res
-      .status(201)
-      .json({ message: "Seu carrinho foi registrado na coleção!" });
+    return res.status(201).json({
+      car: createdCar,
+      message: "Seu carrinho foi registrado na coleção!",
+    });
   } catch (e) {
     console.log(e);
     return res
@@ -132,9 +133,10 @@ export async function updateCar(req, res) {
       }
     }
 
-    return res
-      .status(200)
-      .json({ message: "Alteração realizada com sucesso!" });
+    return res.status(200).json({
+      car: car,
+      message: "Alteração realizada com sucesso!",
+    });
   } catch (e) {
     console.log(e);
     return res
@@ -199,14 +201,16 @@ export async function removeCarPhoto(req, res) {
     if (car.photoUrl) {
       const caminho = path.join(UPLOADS_DIR, car.photoUrl);
 
-      await fs.unlink(caminho);
-
       car.photoUrl = null;
       await car.save();
+      await fs.unlink(caminho);
 
-      return res.status(200).json({ message: "Foto removida com sucesso." });
+      return res.status(200).json({
+        car: car,
+        message: "Foto removida com sucesso.",
+      });
     }
-    return res.status(400).json({ message: "Não há foto para ser removida. " });
+    return res.status(400).json({ message: "Não há foto para ser removida." });
   } catch (e) {
     console.log(e);
     return res

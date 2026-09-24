@@ -79,6 +79,29 @@ export async function viewUser(req, res) {
   }
 }
 
+// Pegar o usuário atual
+export async function getCurrentUser(req, res) {
+  const userId = req.userId;
+
+  try {
+    const user = await db.User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    const currentUser = { id: user.id, name: user.name, username: user.username }
+    return res
+      .status(200)
+      .json({ user: currentUser });
+  } catch (e) {
+    console.log(e);
+    res
+      .status(500)
+      .json({ message: 'Um erro interno ocorreu, tente novamente.' });
+  }
+}
+
 // Editar perfil
 export async function updateUser(req, res) {
   const { id } = req.params;

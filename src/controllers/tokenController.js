@@ -48,3 +48,16 @@ export async function loginUser(req, res) {
       .json({ message: "Um erro interno ocorreu, tente novamente." });
   }
 }
+
+export async function logoutUser(req, res) {
+  try {
+    res.clearCookie('token', {
+      path: '/',
+      sameSite: 'strict',
+    });
+    res.status(200).json({ message: 'Logout realizado com sucesso!' });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({ message: 'Ocorreu um erro com o Logout.' });
+  }
+}

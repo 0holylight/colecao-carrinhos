@@ -21,7 +21,11 @@ app.use(
   }),
 );
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "same-site" },
+  }),
+);
 app.use(cookieParser());
 app.use("/uploads", express.static("uploads"));
 

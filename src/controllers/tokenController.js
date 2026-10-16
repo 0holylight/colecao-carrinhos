@@ -1,6 +1,7 @@
 import db from "../models/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { cookieOptions, authCookie } from "../utils/authCookie.js";
 
 export async function loginUser(req, res) {
   const { username, password } = req.body;
@@ -24,16 +25,7 @@ export async function loginUser(req, res) {
       if (!(await bcrypt.compare(password, match.password))) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       } else {
-        const token = jwt.sign({ id: match.id }, process.env.JWT_SECRET, {
-          expiresIn: "30m",
-        });
-
-        res.cookie("token", token, {
-          httpOnly: true,
-          maxAge: 1800000,
-          sameSite: "strict", // Pode mudar no deploy
-          secure: process.env.NODE_ENV === "production",
-        });
+        authCookie(res, match.id);
 
         return res.status(200).json({
           user: userRes,
@@ -51,13 +43,10 @@ export async function loginUser(req, res) {
 
 export async function logoutUser(req, res) {
   try {
-    res.clearCookie('token', {
-      path: '/',
-      sameSite: 'strict',
-    });
-    res.status(200).json({ message: 'Logout realizado com sucesso!' });
+    res.clearCookie("token", cookieOptions);
+    res.status(200).json({ message: "Logout realizado com sucesso!" });
   } catch (e) {
     console.log(e);
-    res.status(500).json({ message: 'Ocorreu um erro com o Logout.' });
+    res.status(500).json({ message: "Ocorreu um erro com o Logout." });
   }
 }

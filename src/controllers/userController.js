@@ -1,5 +1,6 @@
 import db from "../models/index.js";
 import bcrypt from "bcrypt";
+import { authCookie } from "../utils/authCookie.js";
 
 export async function registerUser(req, res) {
   const { name, username, password } = req.body;
@@ -30,6 +31,7 @@ export async function registerUser(req, res) {
         .json({ message: "Senha precisa conter de 8 a 64 caracteres." });
 
     const match = await db.User.findOne({ where: { username: username } });
+
     if (match === null) {
       const hashPassword = await bcrypt.hash(password, 10);
       const newUser = await db.User.create({
@@ -38,16 +40,16 @@ export async function registerUser(req, res) {
         password: hashPassword,
       });
       console.log(`Usuário: ${username} criado com sucesso!`);
-      res
-        .status(201)
-        .json({
-          message: "Usuário criado com sucesso",
-          user: {
-            id: newUser.id,
-            name: newUser.name,
-            username: newUser.username,
-          },
-        });
+
+      authCookie(res, newUser.id);
+      res.status(201).json({
+        message: "Usuário criado com sucesso",
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          username: newUser.username,
+        },
+      });
     } else {
       console.log("O usuário já foi tomado.");
       res.status(409).json({ message: "Esse username já está em uso" });

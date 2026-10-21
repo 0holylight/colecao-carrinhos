@@ -1,6 +1,5 @@
 import db from "../models/index.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { cookieOptions, authCookie } from "../utils/authCookie.js";
 
 export async function loginUser(req, res) {
@@ -10,6 +9,10 @@ export async function loginUser(req, res) {
   try {
     if (!username) return res.status(400).json({ message: msg });
     if (!password) return res.status(400).json({ message: msg });
+
+    // Validação de tipos
+    if (typeof username !== "string" || typeof password !== "string")
+      return res.status(400).json({ message: "Um ou mais campos foram preenchidos de forma incorreta." });
 
     const match = await db.User.findOne({ where: { username: username } });
 

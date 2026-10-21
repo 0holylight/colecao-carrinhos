@@ -16,6 +16,10 @@ export async function registerUser(req, res) {
     if (!password)
       return res.status(400).json({ message: "Senha não foi enviada." });
 
+    // Validação de tipos
+    if (typeof name !== "string" || typeof username !== "string" || typeof password !== "string")
+      return res.status(400).json({ message: "Um ou mais campos foram preenchidos de forma incorreta." });
+
     // Validação de limites
     if (name.length < 4 || name.length > 100)
       return res

@@ -1,7 +1,6 @@
 import db from "../models/index.js";
 import { UPLOADS_DIR } from "../config/uploads.js";
 import fs from "fs/promises";
-import { unlink } from "fs/promises";
 import path from "path";
 
 // createCar
@@ -27,6 +26,32 @@ export async function createCar(req, res) {
         .status(400)
         .json({ message: "Você precisa inserir o ano do seu carrinho." });
 
+    // Validação de Tipos
+
+    if (typeof name !== "string" || typeof color !== "string")
+      return res.status(400).json({
+        message: "Um ou mais campos foram preenchidos de forma incorreta.",
+      });
+    if (collection !== undefined && typeof collection !== "string")
+      return res.status(400).json({
+        message: "O campo da coleção foi preenchido de forma incorreta.",
+      });
+    const numConvertido = Number(year);
+    if (!Number.isInteger(numConvertido))
+      return res
+        .status(400)
+        .json({ message: "O campo ano foi preenchido de forma incorreta." });
+
+    // Normalização
+    const nomeLimpo = name.trim();
+    const corLimpa = color.trim();
+    const colecaoLimpa = collection?.trim() || null;
+
+    if (!nomeLimpo || !corLimpa)
+      return res
+        .status(400)
+        .json({ message: "Nome e cor não podem ficar em branco." });
+
     const totalCar = await db.Car.count({ where: { UserId: userId } });
 
     if (totalCar >= 25) {
@@ -36,9 +61,9 @@ export async function createCar(req, res) {
     }
 
     const createdCar = await db.Car.create({
-      name,
-      collection,
-      color,
+      name: nomeLimpo,
+      collection: colecaoLimpa,
+      color: corLimpa,
       year,
       UserId: userId,
       photoUrl: photo,
@@ -105,12 +130,49 @@ export async function updateCar(req, res) {
         .status(400)
         .json({ message: 'O campo "ano" não pode ficar vazio.' });
 
+    // Validação de Tipos
+
+    if (typeof name !== "string" || typeof color !== "string")
+      return res.status(400).json({
+        message: "Um ou mais campos foram preenchidos de forma incorreta.",
+      });
+    if (collection !== undefined && typeof collection !== "string")
+      return res.status(400).json({
+        message: "O campo da coleção foi preenchido de forma incorreta.",
+      });
+    const numConvertido = Number(year);
+    if (!Number.isInteger(numConvertido))
+      return res
+        .status(400)
+        .json({ message: "O campo ano foi preenchido de forma incorreta." });
+
+    // Normalização
+    const nomeLimpo = name.trim();
+    const corLimpa = color.trim();
+    const colecaoLimpa = collection?.trim() || null;
+
+    if (!nomeLimpo || !corLimpa)
+      return res
+        .status(400)
+        .json({ message: "Nome e cor não podem ficar em branco." });
+
     const existingPhoto = car.photoUrl;
 
     if (photo) {
-      car.set({ name, year, color, collection, photoUrl: photo });
+      car.set({
+        name: nomeLimpo,
+        year,
+        color: corLimpa,
+        collection: colecaoLimpa,
+        photoUrl: photo,
+      });
     } else {
-      car.set({ name, year, color, collection });
+      car.set({
+        name: nomeLimpo,
+        year,
+        color: corLimpa,
+        collection: colecaoLimpa,
+      });
     }
     const camposAlterados = car.changed();
 
@@ -203,13 +265,18 @@ export async function removeCarPhoto(req, res) {
 
       car.photoUrl = null;
       await car.save();
-      await fs.unlink(caminho);
+      try {
+        await fs.unlink(caminho);
+      } catch (e) {
+        console.log(e);
+      }
 
       return res.status(200).json({
         car: car,
         message: "Foto removida com sucesso.",
       });
     }
+
     return res.status(400).json({ message: "Não há foto para ser removida." });
   } catch (e) {
     console.log(e);

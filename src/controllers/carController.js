@@ -1,14 +1,12 @@
 import db from "../models/index.js";
-import { UPLOADS_DIR } from "../config/uploads.js";
-import fs from "fs/promises";
-import path from "path";
+import { uploadPhoto, deletePhoto } from "../utils/photoStorage.js";
 
 // createCar
 
 export async function createCar(req, res) {
   const userId = req.userId;
   const { name, collection, color, year } = req.body;
-  const photo = req.file?.filename;
+  let photoUrl = null; // [FOTO] guarda o endereço, se houver upload
 
   try {
     if (!userId)
@@ -27,7 +25,6 @@ export async function createCar(req, res) {
         .json({ message: "Você precisa inserir o ano do seu carrinho." });
 
     // Validação de Tipos
-
     if (typeof name !== "string" || typeof color !== "string")
       return res.status(400).json({
         message: "Um ou mais campos foram preenchidos de forma incorreta.",
@@ -60,13 +57,18 @@ export async function createCar(req, res) {
         .json({ message: "Não há mais espaço na sua coleção." });
     }
 
+    // [FOTO] só envia depois que tudo foi validado
+    if (req.file) {
+      photoUrl = await uploadPhoto(req.file);
+    }
+
     const createdCar = await db.Car.create({
       name: nomeLimpo,
       collection: colecaoLimpa,
       color: corLimpa,
       year,
       UserId: userId,
-      photoUrl: photo,
+      photoUrl,
     });
 
     return res.status(201).json({
@@ -75,6 +77,16 @@ export async function createCar(req, res) {
     });
   } catch (e) {
     console.log(e);
+
+    // [FOTO] se a foto subiu mas o carro não foi salvo, apaga a foto
+    if (photoUrl) {
+      try {
+        await deletePhoto(photoUrl);
+      } catch (erroFoto) {
+        console.log("Não foi possível apagar a foto órfã:", erroFoto);
+      }
+    }
+
     return res
       .status(500)
       .json({ message: "Algum erro ocorreu durante o registro." });
@@ -104,7 +116,6 @@ export async function getCar(req, res) {
 export async function updateCar(req, res) {
   const userId = req.userId;
   const { id } = req.params;
-  const photo = req.file?.filename;
   const { name, year, color, collection } = req.body;
 
   try {
@@ -131,7 +142,6 @@ export async function updateCar(req, res) {
         .json({ message: 'O campo "ano" não pode ficar vazio.' });
 
     // Validação de Tipos
-
     if (typeof name !== "string" || typeof color !== "string")
       return res.status(400).json({
         message: "Um ou mais campos foram preenchidos de forma incorreta.",
@@ -158,22 +168,20 @@ export async function updateCar(req, res) {
 
     const existingPhoto = car.photoUrl;
 
-    if (photo) {
-      car.set({
-        name: nomeLimpo,
-        year,
-        color: corLimpa,
-        collection: colecaoLimpa,
-        photoUrl: photo,
-      });
-    } else {
-      car.set({
-        name: nomeLimpo,
-        year,
-        color: corLimpa,
-        collection: colecaoLimpa,
-      });
+    car.set({
+      name: nomeLimpo,
+      year,
+      color: corLimpa,
+      collection: colecaoLimpa,
+    });
+
+    // [FOTO] se veio foto nova, envia e troca o endereço
+    let novaFoto = null;
+    if (req.file) {
+      novaFoto = await uploadPhoto(req.file);
+      car.set({ photoUrl: novaFoto });
     }
+
     const camposAlterados = car.changed();
 
     if (!camposAlterados || camposAlterados.length === 0) {
@@ -182,16 +190,12 @@ export async function updateCar(req, res) {
 
     await car.save();
 
-    // Remoção da foto APÓS o SAVE
-    if (photo && existingPhoto) {
+    // [FOTO] a antiga só é apagada depois que o banco foi atualizado
+    if (novaFoto && existingPhoto) {
       try {
-        await fs.unlink(path.join(UPLOADS_DIR, existingPhoto));
-        console.log("A foto antiga foi removida permanentemente.");
+        await deletePhoto(existingPhoto);
       } catch (e) {
-        console.log(
-          "Um erro ocorreu ao deletar o seguindo arquivo:",
-          existingPhoto,
-        );
+        console.log("Não foi possível apagar a foto antiga:", existingPhoto);
       }
     }
 
@@ -226,14 +230,13 @@ export async function deleteCar(req, res) {
     const existingPhoto = car.photoUrl;
 
     await car.destroy();
+
+    // [FOTO] apaga do Storage, sem derrubar a exclusão se falhar
     if (existingPhoto) {
       try {
-        await fs.unlink(path.join(UPLOADS_DIR, existingPhoto));
+        await deletePhoto(existingPhoto);
       } catch (e) {
-        console.log(
-          "Um erro ocorreu ao deletar o seguindo arquivo:",
-          existingPhoto,
-        );
+        console.log("Não foi possível apagar a foto:", existingPhoto);
       }
     }
 
@@ -245,6 +248,8 @@ export async function deleteCar(req, res) {
       .json({ message: "Um erro ocorreu ao tentar deletar." });
   }
 }
+
+// removeCarPhoto
 
 export async function removeCarPhoto(req, res) {
   const userId = req.userId;
@@ -260,24 +265,27 @@ export async function removeCarPhoto(req, res) {
     if (userId !== car.UserId)
       return res.status(404).json({ message: "Carrinho não encontrado." });
 
-    if (car.photoUrl) {
-      const caminho = path.join(UPLOADS_DIR, car.photoUrl);
-
-      car.photoUrl = null;
-      await car.save();
-      try {
-        await fs.unlink(caminho);
-      } catch (e) {
-        console.log(e);
-      }
-
-      return res.status(200).json({
-        car: car,
-        message: "Foto removida com sucesso.",
-      });
+    if (!car.photoUrl) {
+      return res
+        .status(400)
+        .json({ message: "Não há foto para ser removida." });
     }
 
-    return res.status(400).json({ message: "Não há foto para ser removida." });
+    const fotoAntiga = car.photoUrl;
+    car.photoUrl = null;
+    await car.save();
+
+    // [FOTO] mesma lógica: banco primeiro, arquivo depois
+    try {
+      await deletePhoto(fotoAntiga);
+    } catch (e) {
+      console.log("Não foi possível apagar a foto:", fotoAntiga);
+    }
+
+    return res.status(200).json({
+      car: car,
+      message: "Foto removida com sucesso.",
+    });
   } catch (e) {
     console.log(e);
     return res

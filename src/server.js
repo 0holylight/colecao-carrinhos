@@ -1,7 +1,8 @@
-import app from './app.js';
-import db from './models/index.js';
+import "dotenv/config";
+import app from "./app.js";
+import db from "./models/index.js";
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 try {
   await db.sequelize.sync();
